@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoScoutV Elite Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1a1a2e, #0f0f1a);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .neon-text {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px #00d4ff;
+        }
+
+        .glow-btn {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            transition: 0.3s;
+        }
+
+        .glow-btn:hover {
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .speed-btn.active {
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-width: 2px !important;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .danger-mode {
+            animation: pulse-danger 2s infinite;
+        }
+
+        @keyframes pulse-danger {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+                border-color: rgba(255, 0, 0, 0.8);
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(255, 0, 0, 0.9);
+                border-color: rgba(255, 0, 0, 1);
+            }
+        }
+
+        .warning-text {
+            animation: blink-warning 1s infinite;
+        }
+
+        @keyframes blink-warning {
+
+            0%,
+            49% {
+                opacity: 1;
+            }
+
+            50%,
+            100% {
+                opacity: 0.4;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <nav class="glass flex justify-between items-center p-6 rounded-2xl mb-10">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="CryptoScoutV Logo"
+                    class="h-16 w-16 object-contain rounded-full border-2 border-cyan-400/30 shadow-[0_0_15px_rgba(0,212,255,0.3)]">
+                <div>
+                    <h1 class="neon-text text-3xl font-bold text-cyan-400">Crypto<span class="text-white">ScoutV</span>
+                    </h1>
+                    <p class="text-[10px] tracking-[0.3em] text-gray-500 font-bold uppercase">Advanced Derivation Hub
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-4 items-center">
+                <!-- Safety Rating -->
+                <div class="glass p-3 rounded-2xl cursor-pointer hover:bg-white/5 transition-all" id="safetyRating"
+                    title="Click for safety details">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-golden-400 font-bold uppercase">Safety:</span>
+                        <div id="safetyStars" class="flex gap-0.5">
+                            <span class="text-golden-400 text-sm">★</span>
+                            <span class="text-golden-400 text-sm">★</span>
+                            <span class="text-golden-400 text-sm">★</span>
+                            <span class="text-golden-600 text-sm">★</span>
+                            <span class="textgolden-600 text-sm">★</span>
+                        </div>
+                        <span id="safetyLabel" class="text-[9px] text-golden-400 font-bold">MODERATE</span>
+                    </div>
+                    <div id="safetyDetails"
+                        class="hidden mt-2 p-2 bg-golden-900/30 rounded border border-golden-500/30">
+                        <p class="text-[8px] text-golden-300 font-bold mb-1">⚠️ SAFETY ANALYSIS:</p>
+                        <p id="safetyMessage" class="text-[7px] text-gray-300 leading-relaxed">
+                            Speed: MEDIUM (Moderate) • Coins: 1 (Safe) • Overall: MODERATE RISK
+                        </p>
+                    </div>
+                </div>
+
+                <button id="startBtn"
+                    class="glow-btn bg-cyan-500 text-black px-8 py-2 rounded-full font-bold text-sm">▶️
+                    INITIALIZE</button>
+                <button id="stopBtn"
+                    class="hidden bg-red-500/20 text-red-500 border border-red-500/50 px-8 py-2 rounded-full font-bold text-sm">⏸️
+                    TERMINATE</button>
+                <button id="downloadBtn"
+                    class="glass bg-green-500/20 text-green-400 border border-green-500/50 px-6 py-2 rounded-full font-bold text-sm hover:bg-green-500/30 transition-all">
+                    💾 SAVE HITS
+                </button>
+            </div>
+        </nav>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="glass p-6 rounded-3xl col-span-2">
+                <p class="text-xs text-cyan-500 mb-2 uppercase font-bold">Total Scans Completed</p>
+                <div id="totalScans" class="text-6xl font-bold neon-text">0</div>
+                <p class="text-[9px] text-gray-500 mt-2">🧠 Brain (60%) • 🔢 Pattern (30%) • 🎲 BIP39 (10%)</p>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-xs text-yellow-500 mb-2 uppercase font-bold">Wallet Hits</p>
+                <div id="foundCount" class="text-4xl font-bold text-yellow-400">0</div>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-xs text-purple-500 uppercase font-bold">Scan Speed</p>
+                    <span id="dangerWarning"
+                        class="hidden warning-text text-[8px] text-red-500 font-bold px-2 py-1 bg-red-500/20 rounded border border-red-500">
+                        ⚠️ DANGER MODE
+                    </span>
+                </div>
+                <div id="scanSpeed" class="text-4xl font-bold text-purple-400">0</div>
+                <p class="text-[9px] text-gray-500 mt-2">scans/minute</p>
+                <div class="grid grid-cols-2 gap-2 mt-3">
+                    <button id="slowBtn"
+                        class="speed-btn px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/50 rounded text-[9px] font-bold hover:bg-blue-500/30 transition-all">
+                        🐢 SLOW
+                    </button>
+                    <button id="mediumBtn"
+                        class="speed-btn px-2 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 rounded text-[9px] font-bold hover:bg-yellow-500/30 transition-all active">
+                        ⚡ MED
+                    </button>
+                    <button id="maxBtn"
+                        class="speed-btn px-2 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/50 rounded text-[9px] font-bold hover:bg-orange-500/30 transition-all">
+                        🚀 MAX
+                    </button>
+                    <button id="noLimitBtn"
+                        class="speed-btn px-2 py-1 bg-red-500/30 text-red-400 border-2 border-red-500/70 rounded text-[9px] font-bold hover:bg-red-500/40 transition-all">
+                        ⚡ NO LIMIT
+                    </button>
+                </div>
+                <p id="speedWarning" class="hidden text-[7px] text-red-400 mt-2 text-center font-bold">
+                    ⚠️ High risk of IP ban! Use with caution!
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-xs text-pink-500 mb-2 uppercase font-bold">⚡ Hash Rate</p>
+                <div id="hashRate" class="text-4xl font-bold text-pink-400">0</div>
+                <p class="text-[9px] text-gray-500 mt-2">wallets/second</p>
+            </div>
+
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-xs text-green-500 mb-2 uppercase font-bold">API Latency</p>
+                <div id="apiLatency" class="text-4xl font-bold text-green-400">--</div>
+                <p class="text-[9px] text-gray-500 mt-2">milliseconds</p>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-xs text-orange-500 mb-3 uppercase font-bold">🔍 Scan Method</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                        <input type="radio" name="scanMethod" id="methodMix" value="mix" class="text-[10px]" checked>
+                        <span class="text-[10px] text-gray-300">🎲 Mix</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                        <input type="radio" name="scanMethod" id="methodBrain" value="brain" class="text-[10px]">
+                        <span class="text-[10px] text-gray-300">🧠 Brain</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                        <input type="radio" name="scanMethod" id="methodPattern" value="pattern" class="text-[10px]">
+                        <span class="text-[10px] text-gray-300">🔢 Pattern</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                        <input type="radio" name="scanMethod" id="methodBIP39" value="bip39" class="text-[10px]">
+                        <span class="text-[10px] text-gray-300">🎲 BIP39</span>
+                    </label>
+                </div>
+                <div class="mt-3 p-2 bg-orange-900/20 rounded border border-orange-500/30">
+                    <p id="methodDescription" class="text-[8px] text-orange-200 leading-relaxed">Balanced: 60% Brain,
+                        30% Pattern, 10% BIP39</p>
+                </div>
+            </div>
+            <div class="glass p-6 rounded-3xl">
+                <p class="text-xs text-cyan-500 mb-3 uppercase font-bold">🪙 Coin Selector</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Left: Coin Checkboxes -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                            <input type="checkbox" id="coinBTC" class="coin-checkbox" checked>
+                            <span class="text-[10px] text-orange-400 font-bold">₿ BTC</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                            <input type="checkbox" id="coinETH" class="coin-checkbox">
+                            <span class="text-[10px] text-blue-400 font-bold">Ξ ETH</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                            <input type="checkbox" id="coinBNB" class="coin-checkbox">
+                            <span class="text-[10px] text-yellow-400 font-bold">🔸 BNB</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition">
+                            <input type="checkbox" id="coinMATIC" class="coin-checkbox">
+                            <span class="text-[10px] text-purple-400 font-bold">⬡ MATIC</span>
+                        </label>
+                        <label
+                            class="flex items-center gap-1 cursor-pointer hover:bg-white/5 p-1 rounded transition col-span-2">
+                            <input type="checkbox" id="coinSOL" class="coin-checkbox">
+                            <span class="text-[10px] text-green-400 font-bold">◎ SOL</span>
+                        </label>
+                    </div>
+
+                    <!-- Right: Speed Impact -->
+                    <div class="p-2 bg-purple-900/20 rounded border border-purple-500/30">
+                        <p class="text-[8px] text-purple-300 font-bold mb-1">⚡ Speed Impact:</p>
+                        <div class="text-[8px] text-gray-400 space-y-1">
+                            <div>1: <span class="text-green-400 font-bold">~400/min ⚡⚡⚡</span></div>
+                            <div>2: <span class="text-cyan-400 font-bold">~250/min ⚡⚡</span></div>
+                            <div>3: <span class="text-yellow-400 font-bold">~150/min ⚡</span></div>
+                            <div>5: <span class="text-orange-400 font-bold">~80/min 🐢</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: Selected Coins Display (Full Width) -->
+                <div class="mt-3 p-2 bg-cyan-900/20 rounded border border-cyan-500/30">
+                    <p id="selectedCoinsDisplay" class="text-[8px] text-cyan-300 leading-relaxed">⚡ Checking: ₿ BTC</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div class="lg:col-span-3 glass rounded-3xl p-2 h-[500px] overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-white/10 text-xs font-bold text-gray-400">LIVE DERIVATION LOG</div>
+                <div id="logWindow" class="p-6 overflow-y-auto flex-grow space-y-2 text-[12px] text-cyan-200/70">
+                    <span class="text-gray-600 italic">// System ready. Awaiting user input...</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <div class="glass rounded-3xl p-6 flex-grow overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase">
+                            💎 Found Wallets (<span id="hitCounter">0</span>)
+                        </h3>
+                        <button id="loadHitsBtn"
+                            class="text-[9px] px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded hover:bg-cyan-500/30 transition-all">
+                            📥 Load from DB
+                        </button>
+                    </div>
+                    <div id="hitList" class="space-y-4 overflow-y-auto flex-grow">
+                        <div class="text-center py-10 text-gray-600 text-sm italic">Waiting for wallet hits...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
